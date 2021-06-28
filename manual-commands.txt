@@ -1,0 +1,58 @@
+# 1-generate key pair (private + public)
+# two 256 curves from openSSL that we can use: secp256k1, prime256v1 (this is AKA secp256r1 which SCMS uses)
+openssl ecparam -name prime256v1 -genkey -noout -out ./rse_1.pem -conv_form compressed
+
+# alternative way to generate key, the pem file seem a bit different, need to confirm
+ openssl genpkey -algorithm EC -out rse_1.pem \
+        -pkeyopt ec_paramgen_curve:P-256 \
+        -pkeyopt ec_param_enc:named_curve
+
+# 2-To extract public key from private key file (use compressed private key)
+openssl ec -in ./rse_1.pem -pubout -out ./rse_1_pub.pem -conv_form compressed
+
+# Decode and print on console the content of key file
+openssl ec -in ./rse_1.pem -text -noout
+
+#This didn't work, it's not simple to extract public key (32 ~+ 1 bytes (compressed))
+#sed "/-----BEGIN PUBLIC KEY-----/d" rse_1_pub.pem \
+#| sed "/-----END PUBLIC KEY-----/d" \
+#| base64 -d > rse_1_pub.hex
+
+# 3-output the public key to be copied
+openssl ec -in ./rse_1.pem -text -noout | grep -A3 pub \
+| sed '/pub:/d' | sed 's/^ *//g' | sed s/://g | \
+tr --delete '\n'
+# 3.2 copy the public key into the asn1.txt file 
+
+# MANUALLY EXTRACT THE CSR PART TO SIGN
+
+# AUTOMATICALLY EXTRACT CST PART TO SIGN FROM OER ENCODED CSR 
+# first save the file as OER encoded file then execute the command
+# click on tbsRequest field in the asn1studio editor and take note of the offset and length and enter in command below
+dd skip=5 count=101 if=SignedEeEnrollmentCertRequest.oer bs=1 of=csr-part-to-sign.oer
+
+
+# 4
+openssl dgst -sha256 -sign rse_1.pem -out csr-part-to-sign.sha256.der csr-part-to-sign.oer
+openssl asn1parse -inform DER -in csr-part-to-sign.sha256.der
+
+# 5 to make sure signature is ok
+openssl dgst -sha256 -verify rse_1_pub.pem -signature csr-part-to-sign.sha256.der csr-part-to-sign.oer
+
+# dd skip=39 count=32 if=csr-part-to-sign.sha256.der of=s.signature.hex bs=1
+# 6
+dd skip=4 count=32 if=csr-part-to-sign.sha256.der bs=1 | xxd -p > r.signature.txt
+dd skip=38 count=32 if=csr-part-to-sign.sha256.der bs=1 | xxd -p > s.signature.txt
+
+# 7 same as 3 (to create the upload package)
+openssl ec -in ./rse_1.pem -text -noout | grep -A3 pub \
+| sed '/pub:/d' | sed 's/^ *//g' | sed s/://g | \
+tr --delete '\n'
+
+#openssl enc -base64 -in sign.sha256 -out sign.sha256.base64
+
+# to print ECC curve parameters
+#openssl ecparam -name prime256v1 -out prime256v1.pem
+#openssl ecparam -in prime256v1.pem -text -noout -param_enc explicit
+#openssl asn1parse -in rse_1_pub.pem -i -dump
+

@@ -1,0 +1,49 @@
+value1 SignedEeEnrollmentCertRequest ::= {
+  protocolVersion 3,
+  content signedCertificateRequest : CONTAINING {
+    hashId sha256,
+    tbsRequest {
+      version 1,
+      content eca-ee : eeEcaCertRequest : {
+        version 1,
+        currentTime 1624415560,
+        tbsData {
+          id name : "obe_1",
+          cracaId '000000'H,
+          crlSeries 4,
+          validityPeriod {
+            start 1624415560,
+            duration years : 2
+          },
+          region identifiedRegion : {
+            countryOnly : 840
+          },
+          certRequestPermissions {
+            {
+              subjectPermissions explicit : {
+                {
+                  psid 130
+                },
+                {
+                  psid 2113685
+                },
+                {
+                  psid 2113687
+                }
+              },
+              minChainLength 0,
+              chainLengthRange 0,
+              eeType '1'B
+            }
+          },
+          verifyKeyIndicator verificationKey : ecdsaNistP256 : compressed-y-1 : 'F8FB5A072DD84D3384611950B885F40EBEB1FC4BE930D97DF25A14F5278B1241'H
+        }
+      }
+    },
+    signer self : NULL,
+    signature ecdsaNistP256Signature : {
+      rSig x-only : '4308D26BC6125CBCBC67B5033ED6D97517B6E6B4F650569CD1B2D001FEA1BCC8'H,
+      sSig '31029C58B85961D2D1BC9F092BBA54E6438E1BAB66B3FCA4A784F1F6676B5DD1'H
+    }
+  }
+}
